@@ -49,11 +49,16 @@ export default function ProcessarPage() {
   const canSubmit = finalizados && andamento && (isFirstDay ? !!anterior : true)
 
   const uploadToSupabase = async (file: File, path: string) => {
-    const { error } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(path, file, { upsert: true })
-    if (error) throw new Error(`Erro ao enviar ${file.name}: ${error.message}`)
-  }
+  const arrayBuffer = await file.arrayBuffer()
+  const uint8Array = new Uint8Array(arrayBuffer)
+  const { error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(path, uint8Array, { 
+      upsert: true,
+      contentType: file.type || 'application/octet-stream'
+    })
+  if (error) throw new Error(`Erro ao enviar ${file.name}: ${error.message}`)
+}
 
   const handleSubmit = async () => {
     if (!canSubmit || processing) return
