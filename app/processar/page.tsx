@@ -49,16 +49,16 @@ export default function ProcessarPage() {
   const canSubmit = finalizados && andamento && (isFirstDay ? !!anterior : true)
 
   const uploadToSupabase = async (file: File, path: string) => {
-  const arrayBuffer = await file.arrayBuffer()
-  const uint8Array = new Uint8Array(arrayBuffer)
-  const { error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(path, uint8Array, { 
-      upsert: true,
-      contentType: file.type || 'application/octet-stream'
-    })
-  if (error) throw new Error(`Erro ao enviar ${file.name}: ${error.message}`)
-}
+    const arrayBuffer = await file.arrayBuffer()
+    const uint8Array = new Uint8Array(arrayBuffer)
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(path, uint8Array, {
+        upsert: true,
+        contentType: file.type || 'application/octet-stream'
+      })
+    if (error) throw new Error(`Erro ao enviar ${file.name}: ${error.message}`)
+  }
 
   const handleSubmit = async () => {
     if (!canSubmit || processing) return
@@ -117,13 +117,12 @@ export default function ProcessarPage() {
       setAndamento(null)
       setAnterior(null)
       setLastFileName(data.fileName)
-   } catch (err) {
-  console.error('ERRO COMPLETO:', err)
-  setResult({
-    type: 'error',
-    message: err instanceof Error ? err.message : JSON.stringify(err),
-  })
-}
+    } catch (err) {
+      console.error('ERRO:', err)
+      setResult({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Erro de conexão. Tente novamente.',
+      })
     } finally {
       setProcessing(false)
       setProcessingMsg('Processando...')
@@ -160,44 +159,23 @@ export default function ProcessarPage() {
                     : `Modo diário — a planilha anterior (${lastFileName || 'mais recente'}) será carregada automaticamente do histórico.`}
                 </div>
               )}
-
               <div style={{ display: 'grid', gridTemplateColumns: isFirstDay ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: 16, marginBottom: 28 }}>
                 <UploadCard label="Projetos Finalizados" description="Planilha de projetos finalizados exportada do sistema" file={finalizados} onChange={setFinalizados} disabled={processing} />
                 <UploadCard label="Projetos em Andamento" description="Planilha de projetos em andamento exportada do sistema" file={andamento} onChange={setAndamento} disabled={processing} />
-                {isFirstDay && (
-                  <UploadCard label="Planilha do Dia Anterior" description="Planilha de microcrédito do dia anterior (Google Sheets)" file={anterior} onChange={setAnterior} disabled={processing} />
-                )}
-                {isFirstDay === false && (
-                  <UploadCard label="Planilha do Dia Anterior" description="" file={null} onChange={() => {}} disabled={false} autoFilled={true} autoFilledName={lastFileName || 'Carregando do histórico...'} />
-                )}
+                {isFirstDay && <UploadCard label="Planilha do Dia Anterior" description="Planilha de microcrédito do dia anterior (Google Sheets)" file={anterior} onChange={setAnterior} disabled={processing} />}
+                {isFirstDay === false && <UploadCard label="Planilha do Dia Anterior" description="" file={null} onChange={() => {}} disabled={false} autoFilled={true} autoFilledName={lastFileName || 'Carregando do histórico...'} />}
               </div>
-
-              <button
-                onClick={handleSubmit}
-                disabled={!canSubmit || processing}
-                style={{ width: '100%', background: !canSubmit || processing ? '#A0ABB8' : '#C8963E', color: '#FFF', border: 'none', borderRadius: 10, padding: '15px 24px', fontSize: 15, fontWeight: 600, cursor: !canSubmit || processing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, letterSpacing: '-0.01em', boxShadow: canSubmit && !processing ? '0 4px 12px rgba(200,150,62,0.3)' : 'none' }}
-              >
-                {processing ? (
-                  <><Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} />{processingMsg}</>
-                ) : 'Gerar Planilha de Hoje'}
+              <button onClick={handleSubmit} disabled={!canSubmit || processing} style={{ width: '100%', background: !canSubmit || processing ? '#A0ABB8' : '#C8963E', color: '#FFF', border: 'none', borderRadius: 10, padding: '15px 24px', fontSize: 15, fontWeight: 600, cursor: !canSubmit || processing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, letterSpacing: '-0.01em', boxShadow: canSubmit && !processing ? '0 4px 12px rgba(200,150,62,0.3)' : 'none' }}>
+                {processing ? (<><Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} />{processingMsg}</>) : 'Gerar Planilha de Hoje'}
               </button>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
               {result && (
                 <div style={{ marginTop: 20, borderRadius: 10, padding: '20px 24px', background: result.type === 'success' ? '#F0FDF4' : '#FFF8F8', border: `1px solid ${result.type === 'success' ? '#86EFAC' : '#FECACA'}` }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                    {result.type === 'success'
-                      ? <CheckCircle2 size={22} color="#16A34A" style={{ flexShrink: 0 }} />
-                      : <AlertTriangle size={22} color="#DC2626" style={{ flexShrink: 0 }} />}
+                    {result.type === 'success' ? <CheckCircle2 size={22} color="#16A34A" style={{ flexShrink: 0 }} /> : <AlertTriangle size={22} color="#DC2626" style={{ flexShrink: 0 }} />}
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: result.type === 'success' ? '#15803D' : '#DC2626', marginBottom: 4 }}>
-                        {result.message}
-                      </div>
-                      {result.type === 'success' && result.dateTime && (
-                        <div style={{ fontSize: 12.5, color: '#6B7A94', marginBottom: 12 }}>
-                          Gerada em: {result.dateTime} · {result.fileName}
-                        </div>
-                      )}
+                      <div style={{ fontSize: 15, fontWeight: 600, color: result.type === 'success' ? '#15803D' : '#DC2626', marginBottom: 4 }}>{result.message}</div>
+                      {result.type === 'success' && result.dateTime && <div style={{ fontSize: 12.5, color: '#6B7A94', marginBottom: 12 }}>Gerada em: {result.dateTime} · {result.fileName}</div>}
                       {result.downloadUrl && result.fileName && (
                         <a href={result.downloadUrl} download={result.fileName} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#16A34A', color: '#FFF', padding: '9px 18px', borderRadius: 8, fontSize: 13.5, fontWeight: 500, textDecoration: 'none' }}>
                           <Download size={14} />Baixar Planilha
@@ -210,10 +188,8 @@ export default function ProcessarPage() {
             </>
           )}
         </div>
-
         <div style={{ marginTop: 24, padding: '16px 20px', background: '#F0F4F8', borderRadius: 10, border: '1px solid #DDE3EE', fontSize: 12.5, color: '#6B7A94', lineHeight: 1.6 }}>
-          <strong style={{ color: '#2C3649' }}>Como funciona:</strong>{' '}
-          O sistema envia as planilhas diretamente para o armazenamento seguro, processa os dados e gera o arquivo consolidado com cores por colaborador, disponibilizado para download imediato.
+          <strong style={{ color: '#2C3649' }}>Como funciona:</strong>{' '}O sistema envia as planilhas diretamente para o armazenamento seguro, processa os dados e gera o arquivo consolidado com cores por colaborador, disponibilizado para download imediato.
         </div>
       </main>
     </div>
