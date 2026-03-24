@@ -117,11 +117,13 @@ export default function ProcessarPage() {
       setAndamento(null)
       setAnterior(null)
       setLastFileName(data.fileName)
-    } catch (err) {
-      setResult({
-        type: 'error',
-        message: err instanceof Error ? err.message : 'Erro de conexão. Tente novamente.',
-      })
+   } catch (err) {
+  console.error('ERRO COMPLETO:', err)
+  setResult({
+    type: 'error',
+    message: err instanceof Error ? err.message : JSON.stringify(err),
+  })
+}
     } finally {
       setProcessing(false)
       setProcessingMsg('Processando...')
